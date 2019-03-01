@@ -35,7 +35,46 @@ const dirtyRound = (n: number) => Math.round(n * 100000000000) / 100000000000
 export const importFromBeerXml = (xml: string) => {
   try {
     const doc = XML.parse(xmlToCamelCase(xml))
-    const fermentableNode = doc.recipe.fermentables.fermentable
+    return importFromDoc(doc)
+  } catch (err) {
+    console.log('XML Parser Error: ' + err)
+    throw err
+  }
+}
+
+export const importFromBSMX = (bsmx: string) => {
+  try {
+    var xml = bsmx
+      .replace(/<\/?Data>/gi, '')
+      .replace(/(<\/?)(?:\w{1,2}_){1,2}/gi, '$1')
+      .replace(/CARB_VOLS/gi, 'CARBONATION')
+      .replace(/MashStep/gi, 'Mash_Step')
+
+    const doc = XML.parse(xmlToCamelCase(xml))
+
+    const ingredients = doc.recipe.ingredients
+
+    delete doc.recipe.ingredients
+
+    doc.recipe.fermentables = ingredients.grain
+    doc.recipe.hops = ingredients.hops
+    doc.recipe.waters = ingredients.water
+    doc.recipe.yeasts = ingredients.yeast
+    doc.recipe.miscs = ingredients.misc
+
+    doc.recipe.mash.mashSteps = doc.recipe.mash.steps
+
+    return importFromDoc(doc)
+  } catch (err) {
+    console.log('XML Parser Error: ' + err)
+    throw err
+  }
+}
+
+const importFromDoc = doc => {
+  try {
+    const fermentableNode =
+      doc.recipe.fermentables.fermentable || doc.recipe.fermentables
     const fermentables = Array.from(
       Array.isArray(fermentableNode) ? fermentableNode : [fermentableNode]
     ).map(
@@ -59,7 +98,7 @@ export const importFromBeerXml = (xml: string) => {
       }
     )
 
-    const hopNode = doc.recipe.hops.hop
+    const hopNode = doc.recipe.hops.hop || doc.recipe.hops
     const hops = Array.from(
       Array.isArray(hopNode) ? hopNode : [hopNode]
     ).map(({ name, alpha, amount, form, use, time }: Hop) => {
@@ -106,7 +145,7 @@ export const importFromBeerXml = (xml: string) => {
       mashSteps: mashSteps
     }
 
-    const yeastNode = doc.recipe.yeasts.yeast
+    const yeastNode = doc.recipe.yeasts.yeast || doc.recipe.yeasts
     const yeasts: Array<Yeast> = [
       {
         name: yeastNode.name,

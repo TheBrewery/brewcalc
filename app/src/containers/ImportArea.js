@@ -1,15 +1,28 @@
 import React from 'react'
 import { FormGroup, FormControl, Panel, Row, Col } from 'react-bootstrap'
-import { importFromBeerXml } from 'brewcalc'
+import { importFromBeerXml, importFromBSMX } from 'brewcalc'
 import { connect } from 'react-redux'
 
 const ImportArea = ({ editorState, onReloadEditorState }) => {
   const onXmlLoaded = e => {
     const reader = new FileReader()
-    reader.readAsText(e.target.files[0])
+    const file = e.target.files[0]
+    const ext = file.name.match(/\.\w+$/g)[0]
+    reader.readAsText(file)
     reader.onloadend = function () {
       try {
-        const result = importFromBeerXml(reader.result)
+        console.log(reader.result)
+        var result = ""
+
+        switch (ext) {
+          case ".xml": result = importFromBeerXml(reader.result)
+            break
+          case ".bsmx": result = importFromBSMX(reader.result)
+            break
+          default: 
+            throw new Error("unsupported file")
+        }
+        
         onReloadEditorState(
           JSON.stringify(
             { recipe: result.recipe, equipment: result.equipment },
@@ -18,7 +31,7 @@ const ImportArea = ({ editorState, onReloadEditorState }) => {
           )
         )
       } catch (err) {
-        alert('Can\'t import from BeerXML, see console for the details')
+        alert('Can\'t import from file, see console for the details')
       }
     }
   }
@@ -32,7 +45,7 @@ const ImportArea = ({ editorState, onReloadEditorState }) => {
               id="formControlsFile"
               type="file"
               label="File"
-              accept="application/xml"
+              accept="application/xml, .bsmx"
               onChange={onXmlLoaded}
             />
           </FormGroup>

@@ -1,7 +1,7 @@
 // @flow
 import { recipe, equipment, specifications } from './data/Kolsch'
 import { recipeOne } from './data/GenericOneHF'
-import { importFromBeerXml } from '../importFromBeerXml'
+import { importFromBeerXml, importFromBSMX } from '../importFromBeerXml'
 import * as fs from 'fs'
 
 declare var test: any
@@ -47,12 +47,22 @@ test('importFromBeerXmlNoPotential', () => {
   ).toBeCloseTo(1.035, 3)
 })
 
-test('unparsable xml', () => {
+test('beertools xml', () => {
   const xmlString: string = fs.readFileSync(
-    __dirname + '/data/unparsable.xml',
+    __dirname + '/data/beertools.xml',
     'utf8'
   )
   expect(() => {
     importFromBeerXml(xmlString)
+  }).toThrow()
+})
+
+test('beersmith bsmx', () => {
+  const xmlString: string = fs.readFileSync(
+    __dirname + '/data/beersmith.bsmx',
+    'utf8'
+  )
+  expect(() => {
+    importFromBSMX(xmlString)
   }).toThrow()
 })
